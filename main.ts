@@ -62,13 +62,27 @@ const ENTRY_FILENAME = "entry.txt";
 // Length in code points, so characters outside the BMP count once each
 // instead of twice the way a plain `.length` would count them.
 function countChars(line: string): number {
-  let total = 0;
-  for (const _ch of line) total += 1;
-  return total;
+  return Array.from(line).length;
 }
 
-function hasBadWhitespace(line: string): boolean {
-  return line.trim() !== line;
+function checkNotEmpty(line: string, len: number): void {
+  if (len === 0 || line.trim().length === 0) {
+    throw new Error("entry is empty or only whitespace");
+  }
+}
+
+function checkWithinLimit(len: number): void {
+  if (len > ENTRY_LIMIT) {
+    throw new Error(
+      `entry is ${len} characters, ${len - ENTRY_LIMIT} over the ${ENTRY_LIMIT} limit`,
+    );
+  }
+}
+
+function checkCleanEdges(line: string): void {
+  if (line.trim() !== line) {
+    throw new Error("entry has leading or trailing whitespace");
+  }
 }
 
 function checkSingleLine(line: string): void {
@@ -88,19 +102,12 @@ function checkNoControlChars(line: string): void {
 }
 
 // Every rule the contest imposes on the entry, checked up front.
+// Each gate is a named helper so a failure names the rule it broke.
 function validateEntry(line: string): void {
   const len = countChars(line);
-  if (len === 0 || line.trim().length === 0) {
-    throw new Error("entry is empty or only whitespace");
-  }
-  if (len > ENTRY_LIMIT) {
-    throw new Error(
-      `entry is ${len} characters, ${len - ENTRY_LIMIT} over the ${ENTRY_LIMIT} limit`,
-    );
-  }
-  if (hasBadWhitespace(line)) {
-    throw new Error("entry has leading or trailing whitespace");
-  }
+  checkNotEmpty(line, len);
+  checkWithinLimit(len);
+  checkCleanEdges(line);
   checkSingleLine(line);
   checkNoControlChars(line);
 }
